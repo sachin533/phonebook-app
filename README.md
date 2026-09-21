@@ -1,0 +1,178 @@
+# CyberMax Solutions - Phonebook Application
+
+A complete implementation of the supplied technical evaluation using the required stack:
+
+- Node.js LTS + Express JSON REST API
+- SQL Server Express
+- `mssql` (Tedious) + T-SQL Stored Procedures
+- Vue 3 SPA + Vite
+- Database-level pagination with `OFFSET / FETCH NEXT`
+- Modular route/controller/service/repository structure
+- No ORM or query builder
+
+## 1. Prerequisites
+
+Install:
+
+1. Node.js LTS
+2. SQL Server Express
+3. SQL Server Management Studio (SSMS) or Azure Data Studio
+
+## 2. Database setup
+
+Open `sql/phonebook.sql` in SSMS and execute the whole script.
+
+It creates:
+
+- Database: `PhonebookDb`
+- Table: `dbo.Contacts`
+- `sp_GetContactsPaged`
+- `sp_GetContactById`
+- `sp_InsertContact`
+- `sp_UpdateContact`
+- `sp_DeleteContact`
+
+The paging procedure returns only the current page using `OFFSET ... FETCH NEXT ...` and exposes `@TotalCount` as an output parameter.
+
+## 3. Configure environment
+
+Copy `.env.example` to `.env` and update the SQL Server credentials.
+
+Example for SQL Server Express using SQL authentication:
+
+```env
+PORT=3000
+DB_SERVER=localhost
+DB_DATABASE=PhonebookDb
+DB_USER=sa
+DB_PASSWORD=YourStrongPassword
+DB_ENCRYPT=false
+DB_TRUST_SERVER_CERTIFICATE=true
+DB_PORT=1433
+```
+
+If your SQL Server Express instance is named `SQLEXPRESS` and your setup requires an instance name, configure the SQL Server connection according to your local SQL Server installation. The `mssql` driver can also be configured with a named-instance option if needed.
+
+## 4. Install dependencies
+
+From the project root:
+
+```bash
+npm install
+cd client
+npm install
+cd ..
+```
+
+## 5. Development mode
+
+Terminal 1:
+
+```bash
+npm run dev
+```
+
+Terminal 2:
+
+```bash
+cd client
+npm run dev
+```
+
+Open the Vite URL shown in the terminal, normally `http://localhost:5173`.
+
+Vite proxies `/api` requests to `http://localhost:3000`.
+
+## 6. Production-style single-process run
+
+Build Vue and copy the production files into Express's `server/public` directory:
+
+```bash
+npm run build
+npm start
+```
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+Express serves both the Vue SPA and the REST API from one process.
+
+## 7. API endpoints
+
+```text
+GET    /api/health
+GET    /api/contacts?pageNumber=1&pageSize=10&searchTerm=
+GET    /api/contacts/:id
+POST   /api/contacts
+PUT    /api/contacts/:id
+DELETE /api/contacts/:id
+```
+
+POST/PUT body:
+
+```json
+{
+  "name": "John Doe",
+  "phoneNumber": "9876543210",
+  "email": "john@example.com",
+  "address": "Pune, Maharashtra"
+}
+```
+
+## 8. Project structure
+
+```text
+phonebook-app/
+├── client/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ContactForm.vue
+│   │   │   ├── ContactList.vue
+│   │   │   ├── Pagination.vue
+│   │   │   └── SearchBox.vue
+│   │   ├── services/contactApi.js
+│   │   ├── App.vue
+│   │   ├── main.js
+│   │   └── style.css
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+├── server/
+│   ├── config/db.js
+│   ├── controllers/contactController.js
+│   ├── middleware/errorHandler.js
+│   ├── models/contact.js
+│   ├── repositories/contactRepository.js
+│   ├── routes/contactRoutes.js
+│   ├── services/contactService.js
+│   └── app.js
+├── sql/phonebook.sql
+├── scripts/copy-client.js
+├── .env.example
+├── .gitignore
+├── package.json
+└── README.md
+```
+
+## 9. Architecture flow
+
+```text
+Vue.js SPA
+   ↓ fetch()
+Express Route
+   ↓
+Controller
+   ↓
+Service / validation
+   ↓
+Repository
+   ↓ mssql typed parameters
+SQL Server Stored Procedure
+   ↓
+Contacts table
+```
+
+The repository does not concatenate user input into SQL and does not use Prisma, Sequelize, TypeORM, Knex, or another ORM/query builder.

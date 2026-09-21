@@ -1,0 +1,21 @@
+{
+  "name": "cybermax-phonebook",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CyberMax Solutions Phonebook Evaluation - Node.js Express + SQL Server + Vue.js",
+  "scripts": {
+    "start": "node server/app.js",
+    "dev": "nodemon server/app.js",
+    "build:client": "npm --prefix client install && npm --prefix client run build",
+    "build": "npm run build:client && node scripts/copy-client.js",
+    "check": "node --check server/app.js && node --check server/controllers/contactController.js && node --check server/repositories/contactRepository.js && node --check server/services/contactService.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "mssql": "^11.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
