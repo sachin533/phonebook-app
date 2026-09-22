@@ -12,7 +12,7 @@ const config = {
   },
   pool: {
     max: 10,
-    min: 0,
+    min: 1,
     idleTimeoutMillis: 30000
   }
 };

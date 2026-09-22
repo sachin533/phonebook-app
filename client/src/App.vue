@@ -176,6 +176,7 @@ onMounted(() => { if (isLoggedIn.value) loadContacts(1); });
         :total-pages="totalPages"
         :total-count="totalCount"
         :page-size="pageSize"
+        :loading="loading"
         @change="changePage"
       />
     </section>

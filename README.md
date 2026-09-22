@@ -187,6 +187,21 @@ Contacts table
 
 The repository does not concatenate user input into SQL and does not use Prisma, Sequelize, TypeORM, Knex, or another ORM/query builder.
 
+## 13. Operations note — slow first request / timeouts
+
+If the API is slow on the first request after idle (or times out with
+`Internal server error`), the cause is SQL Server `AUTO_CLOSE` being ON for
+`PhonebookDb`: every new connection pays a database-reopen penalty that can
+exceed the driver's 15s request timeout, and timed-out requests then exhaust
+the connection pool so all pages stay slow. Fix (one time):
+
+```sql
+ALTER DATABASE PhonebookDb SET AUTO_CLOSE OFF;
+```
+
+The app additionally keeps one pooled connection warm (`pool.min: 1` in
+`server/config/db.js`) and the pager disables Prev/Next while loading.
+
 ## 10. Login
 
 The SPA opens on a login screen. Default credentials (configurable via
