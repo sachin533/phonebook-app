@@ -40,20 +40,43 @@ function normalizePagination(pageNumber, pageSize) {
   return { page, size };
 }
 
+// Whitelist: only these columns may drive ORDER BY. Anything else falls back
+// to Name, so arbitrary user input can never reach the SQL text.
+const SORT_COLUMNS = {
+  name: 'Name',
+  phonenumber: 'PhoneNumber',
+  email: 'Email',
+  createdat: 'CreatedAt'
+};
+
+function normalizeSort(sortBy, sortOrder) {
+  const column = SORT_COLUMNS[String(sortBy || '').trim().toLowerCase()] || 'Name';
+  const order = String(sortOrder || '').trim().toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+  return { column, order };
+}
+
 class ContactService {
   constructor(repository) {
     this.repository = repository;
   }
 
-  async getPaged(pageNumber, pageSize, searchTerm) {
+  async getPaged(pageNumber, pageSize, searchTerm, sortBy, sortOrder) {
     const { page, size } = normalizePagination(pageNumber, pageSize);
-    const result = await this.repository.getPaged(page, size, searchTerm);
+    const { column, order } = normalizeSort(sortBy, sortOrder);
+    const result = await this.repository.getPaged(page, size, searchTerm, column, order);
     return new PagedResult({
       items: result.items,
       totalCount: result.totalCount,
       currentPage: page,
       pageSize: size
     });
+  }
+
+  async getSuggestions(term, limit) {
+    const clean = String(term ?? '').trim().slice(0, 255);
+    const count = Math.min(20, Math.max(1, Number.parseInt(limit, 10) || 8));
+    if (!clean) return [];
+    return this.repository.getSuggestions(clean, count);
   }
 
   async getById(id) {
@@ -89,6 +112,10 @@ class ContactService {
       error.statusCode = 400;
       throw error;
     }
+    // Existence check lives here because the procedures use SET NOCOUNT ON,
+    // which makes rowsAffected unreliable for "not found" detection.
+    const existing = await this.repository.getById(parsedId);
+    if (!existing) return null;
     return this.repository.update(parsedId, value);
   }
 
@@ -99,7 +126,10 @@ class ContactService {
       error.statusCode = 400;
       throw error;
     }
-    return this.repository.remove(parsedId);
+    const existing = await this.repository.getById(parsedId);
+    if (!existing) return false;
+    await this.repository.remove(parsedId);
+    return true;
   }
 }
 

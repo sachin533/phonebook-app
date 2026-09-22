@@ -40,6 +40,8 @@ CREATE OR ALTER PROCEDURE dbo.sp_GetContactsPaged
     @PageNumber INT,
     @PageSize INT,
     @SearchTerm NVARCHAR(255) = NULL,
+    @SortBy NVARCHAR(20) = N'Name',
+    @SortOrder NVARCHAR(4) = N'ASC',
     @TotalCount INT OUTPUT
 AS
 BEGIN
@@ -48,6 +50,11 @@ BEGIN
     IF @PageNumber < 1 SET @PageNumber = 1;
     IF @PageSize < 1 SET @PageSize = 10;
     IF @PageSize > 100 SET @PageSize = 100;
+
+    -- Whitelist sort inputs inside the engine: anything unexpected falls back
+    -- to Name ASC. No dynamic SQL is used anywhere here.
+    IF @SortBy NOT IN (N'Name', N'PhoneNumber', N'Email', N'CreatedAt') SET @SortBy = N'Name';
+    IF @SortOrder NOT IN (N'ASC', N'DESC') SET @SortOrder = N'ASC';
 
     SET @SearchTerm = NULLIF(LTRIM(RTRIM(@SearchTerm)), N'');
 
@@ -64,9 +71,39 @@ BEGIN
        OR Name LIKE N'%' + @SearchTerm + N'%'
        OR PhoneNumber LIKE N'%' + @SearchTerm + N'%'
        OR Email LIKE N'%' + @SearchTerm + N'%'
-    ORDER BY Name ASC, Id ASC
+    ORDER BY
+        CASE WHEN @SortBy = N'Name' AND @SortOrder = N'ASC' THEN Name END ASC,
+        CASE WHEN @SortBy = N'Name' AND @SortOrder = N'DESC' THEN Name END DESC,
+        CASE WHEN @SortBy = N'PhoneNumber' AND @SortOrder = N'ASC' THEN PhoneNumber END ASC,
+        CASE WHEN @SortBy = N'PhoneNumber' AND @SortOrder = N'DESC' THEN PhoneNumber END DESC,
+        CASE WHEN @SortBy = N'Email' AND @SortOrder = N'ASC' THEN Email END ASC,
+        CASE WHEN @SortBy = N'Email' AND @SortOrder = N'DESC' THEN Email END DESC,
+        CASE WHEN @SortBy = N'CreatedAt' AND @SortOrder = N'ASC' THEN CreatedAt END ASC,
+        CASE WHEN @SortBy = N'CreatedAt' AND @SortOrder = N'DESC' THEN CreatedAt END DESC,
+        Id ASC
     OFFSET (@PageNumber - 1) * @PageSize ROWS
     FETCH NEXT @PageSize ROWS ONLY;
+END
+GO
+
+-- Google-like autocomplete source: distinct names starting with the typed prefix.
+-- Prefix LIKE (no leading wildcard) seeks the name index; TOP limits the scan.
+CREATE OR ALTER PROCEDURE dbo.sp_GetContactSuggestions
+    @Term NVARCHAR(255),
+    @Limit INT = 10
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SET @Term = LTRIM(RTRIM(@Term));
+    IF @Term IS NULL OR @Term = N'' RETURN;
+    IF @Limit < 1 SET @Limit = 10;
+    IF @Limit > 20 SET @Limit = 20;
+
+    SELECT DISTINCT TOP (@Limit) Name
+    FROM dbo.Contacts
+    WHERE Name LIKE @Term + N'%'
+    ORDER BY Name ASC;
 END
 GO
 

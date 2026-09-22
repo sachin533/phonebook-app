@@ -46,3 +46,14 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`Phonebook server running at http://localhost:${PORT}`);
 });
+
+// Ops keepalive (not CRUD): touches the Contacts table every 25s so the pool,
+// plans and buffer pool stay warm and transient first-touch stalls happen in
+// the background instead of on a user click. Failures are swallowed silently.
+setInterval(async () => {
+  try {
+    await service.getPaged(1, 1, '');
+  } catch {
+    // ignored: next tick retries
+  }
+}, 25000).unref();

@@ -69,6 +69,7 @@ async function main() {
         .input('PhoneNumber', sql.NVarChar(50), phoneNumber)
         .input('Email', sql.NVarChar(255), email)
         .input('Address', sql.NVarChar(sql.MAX), address)
+        .output('NewId', sql.Int)
         .execute('sp_InsertContact');
       existing.add(phoneNumber);
       inserted += 1;

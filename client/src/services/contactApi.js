@@ -26,9 +26,14 @@ async function parseResponse(response) {
   return data;
 }
 
-export async function getContacts({ pageNumber = 1, pageSize = 10, searchTerm = '' } = {}) {
-  const params = new URLSearchParams({ pageNumber, pageSize, searchTerm });
+export async function getContacts({ pageNumber = 1, pageSize = 10, searchTerm = '', sortBy = 'Name', sortOrder = 'ASC' } = {}) {
+  const params = new URLSearchParams({ pageNumber, pageSize, searchTerm, sortBy, sortOrder });
   return parseResponse(await fetch(`${API_BASE}?${params}`));
+}
+
+export async function getSuggestions(term, limit = 8) {
+  const params = new URLSearchParams({ term, limit });
+  return parseResponse(await fetch(`${API_BASE}/suggestions?${params}`));
 }
 
 export async function getContact(id) {

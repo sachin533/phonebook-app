@@ -14,7 +14,7 @@ function mapRow(row) {
 
 class ContactRepository {
 
-  async getPaged(pageNumber, pageSize, searchTerm = '') {
+  async getPaged(pageNumber, pageSize, searchTerm = '', sortBy = 'Name', sortOrder = 'ASC') {
     const pool = await getPool();
 
     const request = pool.request()
@@ -25,6 +25,8 @@ class ContactRepository {
         sql.NVarChar(255),
         searchTerm?.trim() || null
       )
+      .input('SortBy', sql.NVarChar(20), sortBy)
+      .input('SortOrder', sql.NVarChar(4), sortOrder)
       .output('TotalCount', sql.Int);
 
     const result = await request.execute('sp_GetContactsPaged');
@@ -36,6 +38,17 @@ class ContactRepository {
       items: rows.map(mapRow),
       totalCount
     };
+  }
+
+  async getSuggestions(term, limit = 8) {
+    const pool = await getPool();
+
+    const result = await pool.request()
+      .input('Term', sql.NVarChar(255), term)
+      .input('Limit', sql.Int, limit)
+      .execute('sp_GetContactSuggestions');
+
+    return (result.recordset || []).map(row => row.Name);
   }
 
   async getById(id) {
@@ -58,15 +71,16 @@ class ContactRepository {
       .input('PhoneNumber', sql.NVarChar(50), contact.phoneNumber)
       .input('Email', sql.NVarChar(255), contact.email)
       .input('Address', sql.NVarChar(sql.MAX), contact.address)
+      .output('NewId', sql.Int)
       .execute('sp_InsertContact');
 
-    return result;
+    return this.getById(result.output.NewId);
   }
 
   async update(id, contact) {
     const pool = await getPool();
 
-    const result = await pool.request()
+    await pool.request()
       .input('Id', sql.Int, id)
       .input('Name', sql.NVarChar(255), contact.name)
       .input('PhoneNumber', sql.NVarChar(50), contact.phoneNumber)
@@ -74,21 +88,17 @@ class ContactRepository {
       .input('Address', sql.NVarChar(sql.MAX), contact.address)
       .execute('sp_UpdateContact');
 
-    if ((result.rowsAffected?.[0] || 0) === 0) {
-      return null;
-    }
-
+    // NOTE: procedures use SET NOCOUNT ON, so rowsAffected is not reliable.
+    // Existence is checked in the service layer; re-read the updated row here.
     return this.getById(id);
   }
 
   async remove(id) {
     const pool = await getPool();
 
-    const result = await pool.request()
+    await pool.request()
       .input('Id', sql.Int, id)
       .execute('sp_DeleteContact');
-
-    return (result.rowsAffected?.[0] || 0) > 0;
   }
 }
 

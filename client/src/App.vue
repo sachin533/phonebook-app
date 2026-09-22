@@ -18,6 +18,11 @@ const pageSize = ref(10);
 const totalPages = ref(0);
 const totalCount = ref(0);
 const searchTerm = ref('');
+const sortBy = ref('Name');
+const sortOrder = ref('ASC');
+// Term used by the latest requested load; guards typed-vs-button duplicates.
+const appliedKey = ref('');
+let loadSeq = 0;
 const loading = ref(false);
 const saving = ref(false);
 const error = ref('');
@@ -41,32 +46,61 @@ function onLoggedIn(name) {
 }
 
 async function loadContacts(page = currentPage.value) {
+  const seq = ++loadSeq;
   loading.value = true;
   error.value = '';
   try {
     const result = await getContacts({
       pageNumber: page,
       pageSize: pageSize.value,
-      searchTerm: searchTerm.value
+      searchTerm: searchTerm.value,
+      sortBy: sortBy.value,
+      sortOrder: sortOrder.value
     });
+    if (seq !== loadSeq) return; // stale response from an overlapping request
     contacts.value = result.items;
     currentPage.value = result.currentPage;
     pageSize.value = result.pageSize;
     totalPages.value = result.totalPages;
     totalCount.value = result.totalCount;
   } catch (err) {
+    if (seq !== loadSeq) return;
     error.value = err.message;
   } finally {
-    loading.value = false;
+    if (seq === loadSeq) loading.value = false;
   }
 }
 
 function search() {
+  appliedKey.value = searchTerm.value;
   currentPage.value = 1;
   loadContacts(1);
 }
 
-function changePageSize() {
+// Debounced typing from the search box: auto-refresh, page 1.
+function onType(value) {
+  searchTerm.value = value;
+  if (value === appliedKey.value) return;
+  appliedKey.value = value;
+  currentPage.value = 1;
+  loadContacts(1);
+}
+
+// Column header sort: toggle direction, reset to page 1, keep term + size.
+function onSort(column) {
+  if (sortBy.value === column) {
+    sortOrder.value = sortOrder.value === 'ASC' ? 'DESC' : 'ASC';
+  } else {
+    sortBy.value = column;
+    sortOrder.value = 'ASC';
+  }
+  currentPage.value = 1;
+  loadContacts(1);
+}
+
+function changePageSize(size) {
+  if (size === pageSize.value) return;
+  pageSize.value = size;
   loadContacts(1);
 }
 
@@ -162,15 +196,17 @@ onMounted(() => { if (isLoggedIn.value) loadContacts(1); });
     <!-- SEARCH SCREEN: search + paged list only, no add form -->
     <section v-if="view === 'search'">
       <div class="toolbar">
-        <SearchBox v-model="searchTerm" @search="search" />
-        <select v-model.number="pageSize" class="pagesize" aria-label="Page size" @change="changePageSize">
-          <option :value="5">5 / page</option>
-          <option :value="10">10 / page</option>
-          <option :value="20">20 / page</option>
-          <option :value="50">50 / page</option>
-        </select>
+        <SearchBox v-model="searchTerm" @search="search" @type="onType" />
       </div>
-      <ContactList :contacts="contacts" :loading="loading" @edit="startEdit" @delete="removeContact" />
+      <ContactList
+        :contacts="contacts"
+        :loading="loading"
+        :sort-by="sortBy"
+        :sort-order="sortOrder"
+        @edit="startEdit"
+        @delete="removeContact"
+        @sort="onSort"
+      />
       <Pagination
         :current-page="currentPage"
         :total-pages="totalPages"
@@ -178,6 +214,7 @@ onMounted(() => { if (isLoggedIn.value) loadContacts(1); });
         :page-size="pageSize"
         :loading="loading"
         @change="changePage"
+        @size="changePageSize"
       />
     </section>
 

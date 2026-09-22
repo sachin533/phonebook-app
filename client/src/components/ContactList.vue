@@ -1,9 +1,23 @@
 <script setup>
 defineProps({
   contacts: { type: Array, default: () => [] },
-  loading: { type: Boolean, default: false }
+  loading: { type: Boolean, default: false },
+  sortBy: { type: String, default: 'Name' },
+  sortOrder: { type: String, default: 'ASC' }
 });
-const emit = defineEmits(['edit', 'delete']);
+const emit = defineEmits(['edit', 'delete', 'sort']);
+
+const COLUMNS = [
+  { key: 'Name', label: 'Name' },
+  { key: 'PhoneNumber', label: 'Phone' },
+  { key: 'Email', label: 'Email' },
+  { key: 'CreatedAt', label: 'Created' }
+];
+
+function arrow(key, sortBy, sortOrder) {
+  if (sortBy !== key) return '';
+  return sortOrder === 'ASC' ? ' ↑' : ' ↓';
+}
 </script>
 
 <template>
@@ -13,7 +27,18 @@ const emit = defineEmits(['edit', 'delete']);
     <div v-else class="table-wrap">
       <table>
         <thead>
-          <tr><th>Name</th><th>Phone</th><th>Email</th><th>Address</th><th>Actions</th></tr>
+          <tr>
+            <th
+              v-for="col in COLUMNS"
+              :key="col.key"
+              class="sortable"
+              :class="{ active: sortBy === col.key }"
+              @click="emit('sort', col.key)"
+              :title="`Sort by ${col.label}`"
+            >{{ col.label }}<span class="arrow">{{ arrow(col.key, sortBy, sortOrder) }}</span></th>
+            <th>Address</th>
+            <th>Actions</th>
+          </tr>
         </thead>
         <tbody>
           <tr v-for="contact in contacts" :key="contact.id">

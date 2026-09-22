@@ -5,9 +5,18 @@ function createContactController(service) {
         const result = await service.getPaged(
           req.query.pageNumber,
           req.query.pageSize,
-          req.query.searchTerm || ''
+          req.query.searchTerm || '',
+          req.query.sortBy,
+          req.query.sortOrder
         );
         res.status(200).json(result);
+      } catch (error) { next(error); }
+    },
+
+    suggestions: async (req, res, next) => {
+      try {
+        const items = await service.getSuggestions(req.query.term, req.query.limit);
+        res.status(200).json(items);
       } catch (error) { next(error); }
     },
 
