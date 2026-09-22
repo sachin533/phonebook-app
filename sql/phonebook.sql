@@ -65,24 +65,33 @@ BEGIN
        OR PhoneNumber LIKE N'%' + @SearchTerm + N'%'
        OR Email LIKE N'%' + @SearchTerm + N'%';
 
+    -- Sort key comes ONLY from this CASE map: user input can never reach the
+    -- SQL text. The statement itself stays fully parameterized via
+    -- sp_executesql. This lets the optimizer use index order directly
+    -- (no Sort operator, minimal memory grant) instead of a CASE-based sort.
+    DECLARE @OrderBy NVARCHAR(100) =
+      CASE @SortBy
+        WHEN N'PhoneNumber' THEN N'PhoneNumber'
+        WHEN N'Email' THEN N'Email'
+        WHEN N'CreatedAt' THEN N'CreatedAt'
+        ELSE N'Name'
+      END + CASE WHEN @SortOrder = N'DESC' THEN N' DESC' ELSE N' ASC' END
+      + N', Id ASC';
+
+    DECLARE @Sql NVARCHAR(MAX) = N'
     SELECT Id, Name, PhoneNumber, Email, Address, CreatedAt
     FROM dbo.Contacts
-    WHERE @SearchTerm IS NULL
-       OR Name LIKE N'%' + @SearchTerm + N'%'
-       OR PhoneNumber LIKE N'%' + @SearchTerm + N'%'
-       OR Email LIKE N'%' + @SearchTerm + N'%'
-    ORDER BY
-        CASE WHEN @SortBy = N'Name' AND @SortOrder = N'ASC' THEN Name END ASC,
-        CASE WHEN @SortBy = N'Name' AND @SortOrder = N'DESC' THEN Name END DESC,
-        CASE WHEN @SortBy = N'PhoneNumber' AND @SortOrder = N'ASC' THEN PhoneNumber END ASC,
-        CASE WHEN @SortBy = N'PhoneNumber' AND @SortOrder = N'DESC' THEN PhoneNumber END DESC,
-        CASE WHEN @SortBy = N'Email' AND @SortOrder = N'ASC' THEN Email END ASC,
-        CASE WHEN @SortBy = N'Email' AND @SortOrder = N'DESC' THEN Email END DESC,
-        CASE WHEN @SortBy = N'CreatedAt' AND @SortOrder = N'ASC' THEN CreatedAt END ASC,
-        CASE WHEN @SortBy = N'CreatedAt' AND @SortOrder = N'DESC' THEN CreatedAt END DESC,
-        Id ASC
+    WHERE (@SearchTerm IS NULL
+       OR Name LIKE N''%'' + @SearchTerm + N''%''
+       OR PhoneNumber LIKE N''%'' + @SearchTerm + N''%''
+       OR Email LIKE N''%'' + @SearchTerm + N''%'')
+    ORDER BY ' + @OrderBy + N'
     OFFSET (@PageNumber - 1) * @PageSize ROWS
-    FETCH NEXT @PageSize ROWS ONLY;
+    FETCH NEXT @PageSize ROWS ONLY;';
+
+    EXEC sp_executesql @Sql,
+      N'@SearchTerm NVARCHAR(255), @PageNumber INT, @PageSize INT',
+      @SearchTerm, @PageNumber, @PageSize;
 END
 GO
 

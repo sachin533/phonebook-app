@@ -1,0 +1,29 @@
+# Phonebook — single public URL via Caddy reverse proxy.
+#
+#   http://localhost:8080/               -> Vue frontend  (127.0.0.1:5173)
+#   http://localhost:8080/api/contacts   -> Express API   (127.0.0.1:3000)
+#   http://localhost:8080/api/auth/login -> Express API   (127.0.0.1:3000)
+#
+# Run from the project root:
+#   .\deploy\caddy-bin\caddy.exe run --config deploy\Caddyfile
+#
+# For a real domain with automatic HTTPS, replace ":8080" with your domain:
+#   phonebook.example.com {
+#       handle /api/* {
+#           reverse_proxy 127.0.0.1:3000
+#       }
+#       handle {
+#           reverse_proxy 127.0.0.1:5173
+#       }
+#   }
+# SQL Server is never routed here and stays reachable only on 127.0.0.1:1433.
+
+:8080 {
+    handle /api/* {
+        reverse_proxy 127.0.0.1:3000
+    }
+
+    handle {
+        reverse_proxy 127.0.0.1:5173
+    }
+}

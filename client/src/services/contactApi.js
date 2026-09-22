@@ -1,5 +1,10 @@
-const API_BASE = '/api/contacts';
-const AUTH_BASE = '/api/auth';
+// Base for API calls. Empty (default) = same-origin relative "/api/...",
+// which is what the Vite dev proxy and the Nginx/Caddy reverse proxy expect.
+// Only set VITE_API_BASE_URL when the API lives on another origin entirely,
+// e.g. VITE_API_BASE_URL=http://localhost:3000
+const API_ROOT = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const API_BASE = `${API_ROOT}/api/contacts`;
+const AUTH_BASE = `${API_ROOT}/api/auth`;
 
 export async function login(username, password) {
   return parseResponse(await fetch(`${AUTH_BASE}/login`, {

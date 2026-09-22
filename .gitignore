@@ -4,3 +4,6 @@ server/public/
 .env
 client/dist/
 *.log
+# Caddy binaries are downloaded locally, not committed
+deploy/caddy.zip
+deploy/caddy-bin/

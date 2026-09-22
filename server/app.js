@@ -14,6 +14,29 @@ const PORT = Number(process.env.PORT || 3000);
 
 app.use(express.json());
 
+// Behind Nginx/Caddy the app sees the proxy's address; trust it for
+// correct client IPs and X-Forwarded-Proto handling.
+app.set('trust proxy', 1);
+
+// CORS stays OFF in the standard layouts: the browser talks to one origin
+// (Vite dev proxy on :5173, or Nginx/Caddy on :8080), so no cross-origin
+// calls happen. Only enable it when the UI is served from another origin
+// than the API, e.g. CORS_ORIGIN=http://localhost:5173
+if (process.env.CORS_ORIGIN) {
+  const allowed = process.env.CORS_ORIGIN.split(',').map(s => s.trim()).filter(Boolean);
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && allowed.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    }
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
+}
+
 // CORS is intentionally not enabled by default. During Vite development,
 // add a CORS middleware/package only if frontend and API use different origins.
 
