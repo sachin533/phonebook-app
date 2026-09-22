@@ -25,6 +25,17 @@ BEGIN
 END
 GO
 
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Contacts_Name_Id_Covering' AND object_id = OBJECT_ID(N'dbo.Contacts'))
+BEGIN
+    -- Covering index for the paged search: rows come out in ORDER BY Name, Id
+    -- directly from the index, so the engine sorts nothing and performs no
+    -- key lookups when serving OFFSET / FETCH pages.
+    CREATE INDEX IX_Contacts_Name_Id_Covering
+        ON dbo.Contacts (Name ASC, Id ASC)
+        INCLUDE (PhoneNumber, Email, Address, CreatedAt);
+END
+GO
+
 CREATE OR ALTER PROCEDURE dbo.sp_GetContactsPaged
     @PageNumber INT,
     @PageSize INT,

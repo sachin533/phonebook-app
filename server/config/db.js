@@ -13,8 +13,10 @@ const config = {
   pool: {
     max: 10,
     min: 1,
-    idleTimeoutMillis: 30000
-  }
+    idleTimeoutMillis: 30000,
+    acquireTimeoutMillis: 30000
+  },
+  requestTimeout: 30000
 };
 
 let poolPromise;
