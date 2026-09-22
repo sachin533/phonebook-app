@@ -25,10 +25,8 @@ npm run dev
 Terminal 3 — reverse proxy on :8080 (pick one):
 
 ```powershell
-# Caddy (binary included under deploy/caddy-bin, no install needed)
-.\deploy\caddy-bin\caddy.exe run --config deploy\Caddyfile
-
-# ...or Nginx (install from nginx.org, then point at the shipped config)
+# Nginx (download the Windows build once from https://nginx.org/en/download.html,
+# unpack it, then point it at the shipped config)
 nginx -c E:\CyberF\phonebook-app\deploy\nginx.conf
 ```
 
@@ -51,9 +49,9 @@ flip pages, change page size, sort columns, add a contact.
 
 ## Production notes
 
-- `npm run build` + serve `client/dist` on :5173 (`vite preview`), or let
-  Nginx serve `client/dist` directly and proxy only `/api/` to :3000.
-- For a public domain with Caddy, use the commented `phonebook.example.com`
-  block in `Caddyfile` — HTTPS certificates are automatic.
+- `npm run build` + serve `client/dist` on :5173 (`vite preview`); Nginx keeps
+  routing `/` there and `/api/` to :3000.
+- For a public domain, terminate TLS on the Nginx server block (listen 443
+  ssl + certificates) and keep the same two locations.
 - CORS is off by default and stays off here (single origin). Only set
   `CORS_ORIGIN` in `.env` if the UI ever calls the API cross-origin.

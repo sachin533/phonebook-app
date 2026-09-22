@@ -14,12 +14,12 @@ const PORT = Number(process.env.PORT || 3000);
 
 app.use(express.json());
 
-// Behind Nginx/Caddy the app sees the proxy's address; trust it for
+// Behind Nginx the app sees the proxy's address; trust it for
 // correct client IPs and X-Forwarded-Proto handling.
 app.set('trust proxy', 1);
 
 // CORS stays OFF in the standard layouts: the browser talks to one origin
-// (Vite dev proxy on :5173, or Nginx/Caddy on :8080), so no cross-origin
+// (Vite dev proxy on :5173, or Nginx on :8080), so no cross-origin
 // calls happen. Only enable it when the UI is served from another origin
 // than the API, e.g. CORS_ORIGIN=http://localhost:5173
 if (process.env.CORS_ORIGIN) {

@@ -1,5 +1,5 @@
 // Base for API calls. Empty (default) = same-origin relative "/api/...",
-// which is what the Vite dev proxy and the Nginx/Caddy reverse proxy expect.
+// which is what the Vite dev proxy and the Nginx reverse proxy expect.
 // Only set VITE_API_BASE_URL when the API lives on another origin entirely,
 // e.g. VITE_API_BASE_URL=http://localhost:3000
 const API_ROOT = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');

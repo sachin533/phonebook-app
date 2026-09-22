@@ -175,10 +175,10 @@ see `deploy/README.md`. `/` goes to Vue, `/api/*` goes to Express:
 ```powershell
 npm start                                   # terminal 1: backend :3000
 cd client; npm run dev                      # terminal 2: frontend :5173
-.\deploy\caddy-bin\caddy.exe run --config deploy\Caddyfile   # terminal 3: :8080
+nginx -c E:\CyberF\phonebook-app\deploy\nginx.conf   # terminal 3: :8080
 ```
 
-Open http://localhost:8080. An `nginx.conf` equivalent is also in `deploy/`.
+Open http://localhost:8080.
 The frontend uses relative `/api/...` calls (overridable via
 `VITE_API_BASE_URL`), so no CORS is needed on the single origin; SQL Server
 stays private on loopback.
