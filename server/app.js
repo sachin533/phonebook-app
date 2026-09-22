@@ -6,6 +6,7 @@ const { ContactRepository } = require('./repositories/contactRepository');
 const { ContactService } = require('./services/contactService');
 const { createContactController } = require('./controllers/contactController');
 const { createContactRouter } = require('./routes/contactRoutes');
+const { createAuthRouter } = require('./routes/authRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -25,6 +26,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/contacts', createContactRouter(controller));
+app.use('/api/auth', createAuthRouter());
 
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));

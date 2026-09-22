@@ -104,11 +104,18 @@ Express serves both the Vue SPA and the REST API from one process.
 
 ```text
 GET    /api/health
+POST   /api/auth/login
 GET    /api/contacts?pageNumber=1&pageSize=10&searchTerm=
 GET    /api/contacts/:id
 POST   /api/contacts
 PUT    /api/contacts/:id
 DELETE /api/contacts/:id
+```
+
+Login body (`ADMIN_USER` / `ADMIN_PASSWORD`, default `admin` / `admin`):
+
+```json
+{ "username": "admin", "password": "admin" }
 ```
 
 POST/PUT body:
@@ -131,6 +138,7 @@ phonebook-app/
 │   │   ├── components/
 │   │   │   ├── ContactForm.vue
 │   │   │   ├── ContactList.vue
+│   │   │   ├── LoginView.vue
 │   │   │   ├── Pagination.vue
 │   │   │   └── SearchBox.vue
 │   │   ├── services/contactApi.js
@@ -147,10 +155,12 @@ phonebook-app/
 │   ├── models/contact.js
 │   ├── repositories/contactRepository.js
 │   ├── routes/contactRoutes.js
+│   ├── routes/authRoutes.js
 │   ├── services/contactService.js
 │   └── app.js
 ├── sql/phonebook.sql
 ├── scripts/copy-client.js
+├── scripts/seed-fake.js
 ├── .env.example
 ├── .gitignore
 ├── package.json
@@ -176,3 +186,36 @@ Contacts table
 ```
 
 The repository does not concatenate user input into SQL and does not use Prisma, Sequelize, TypeORM, Knex, or another ORM/query builder.
+
+## 10. Login
+
+The SPA opens on a login screen. Default credentials (configurable via
+`ADMIN_USER` / `ADMIN_PASSWORD` in `.env`):
+
+```text
+username: admin
+password: admin
+```
+
+`POST /api/auth/login` returns an opaque token kept in `sessionStorage`;
+a Logout button sits in the app header.
+
+## 11. Screens
+
+The app has three separate screens — add and search are never shown together:
+
+- **Search Contacts** — search box + paged contact list + pagination (page size 5/10/20/50)
+- **Add Contact** — contact form only
+- **Edit Contact** — opened from a list row's Edit button; Save/Cancel returns to Search
+
+## 12. Fake data seed
+
+`scripts/seed-fake.js` is a dependency-free deterministic fake-data generator
+(realistic names, unique phones, emails, addresses) that inserts through
+`sp_InsertContact`:
+
+```bash
+node scripts/seed-fake.js 1000          # add 1000 contacts (default)
+node scripts/seed-fake.js 500 --clear   # clear table, then add 500
+npm run seed                            # same as default 1000
+```

@@ -8,6 +8,7 @@
     "dev": "nodemon server/app.js",
     "build:client": "npm --prefix client install && npm --prefix client run build",
     "build": "npm run build:client && node scripts/copy-client.js",
+    "seed": "node scripts/seed-fake.js",
     "check": "node --check server/app.js && node --check server/controllers/contactController.js && node --check server/repositories/contactRepository.js && node --check server/services/contactService.js"
   },
   "dependencies": {

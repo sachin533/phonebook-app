@@ -1,4 +1,22 @@
 const API_BASE = '/api/contacts';
+const AUTH_BASE = '/api/auth';
+
+export async function login(username, password) {
+  return parseResponse(await fetch(`${AUTH_BASE}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  }));
+}
+
+export function getToken() {
+  return sessionStorage.getItem('phonebook_token') || '';
+}
+
+export function setToken(token) {
+  if (token) sessionStorage.setItem('phonebook_token', token);
+  else sessionStorage.removeItem('phonebook_token');
+}
 
 async function parseResponse(response) {
   const data = await response.json().catch(() => ({}));

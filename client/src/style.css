@@ -45,6 +45,17 @@ th { background: #fafbfc; color: #566276; font-size: 12px; text-transform: upper
 .alert { margin: 10px 0 15px; padding: 11px 14px; border-radius: 9px; }
 .alert.error { background: #fdebed; color: #a52d3a; }
 .alert.success { background: #e8f7ed; color: #287441; }
+.login-wrap { min-height: 90vh; display: grid; place-items: center; padding: 20px; }
+.login-card { padding: 28px; width: min(420px, 100%); }
+.login-card h1 { margin-bottom: 2px; }
+.login-card label { display: block; margin: 14px 0 6px; font-size: 13px; font-weight: 700; }
+.tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+.tabs button { background: #e9edf4; color: #293449; }
+.tabs button.active { background: #4255d9; color: #fff; }
+.userbox { display: flex; align-items: center; gap: 10px; }
+.user { font-weight: 700; color: #293449; }
+.narrow { max-width: 560px; }
+.pagesize { width: auto; white-space: nowrap; }
 footer { text-align: center; color: #8993a4; font-size: 12px; margin-top: 28px; }
 @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .container { padding: 20px 12px 35px; } .toolbar, .search { flex-wrap: wrap; } .search input { min-width: 100%; } .header { align-items: flex-start; } h1 { font-size: 30px; } }
